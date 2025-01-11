@@ -127,6 +127,32 @@ void getHarmonicAmplitudes(DDATA *ddata, int dataSize) {
 }
 
 int main() {
+	int i = 0;
+    float sum = 0.0f;
 
+    // Estimate Frequencey and Theta
+    for (i = 0; i < DATA_LENGTH * CYCLE; i++) {
+        estimateFrequencyAndTheta(&ddata, DATA_LENGTH * CYCLE);
+    }
+
+    // Get Harmonic Amplitudes 
+    getHarmonicAmplitudes(&ddata, DATA_LENGTH * CYCLE);
+
+    // Print Theta_est and F_est  
+    printf("Theta_est: %f, F_est: %f\n", ddata.Theta_est, ddata.F_est);
+
+    // Print the Harmonic Amplitudes
+    for (i = 0; i < 5; i++) {
+        printf("Harmonic %d: %f\n", i + 1, ddata.Harmonics[i]);
+    }
+
+    // Calculate the THD value
+    for (i = 1; i <= 5; i++) {
+        sum += ddata.Harmonics[i] * ddata.Harmonics[i];
+    }
+
+    // Print the THD value
+    printf("THD: %.2f%%\n", sqrt(sum)/ddata.Harmonics[0]*100.0f);
+    return 0;
 }
 
