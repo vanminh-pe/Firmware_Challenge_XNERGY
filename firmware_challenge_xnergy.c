@@ -77,7 +77,19 @@ void estimateFrequencyAndTheta(DDATA *ddata, int dataSize) {
 // Get Harmonic Amplitudes
 //
 void getHarmonicAmplitudes(DDATA *ddata, int dataSize) {
-...
+    // Number of samples per cycle
+    dataSize = dataSize/CYCLE;          //20 samples = 1000 Hz (sampling rate)/ 50 Hz (nominal grid frequency)
+    for (int k = 1; k <= 5; k++) { 
+        float real = 0, imag = 0;
+
+        for (int n = 0; n < dataSize; n++) {
+            real += ddata->in_a[n] * cosf(2 * PI * k * (n) / dataSize); // Sum of real part of the k-th harmonic
+            imag -= ddata->in_a[n] * sinf(2 * PI * k * (n) / dataSize); // Sum of imaginary part of the k-th harmonic   
+        }
+        
+        // Calculate the amplitude of the k-th harmonic
+        ddata->Harmonics[k-1] = sqrt(real * real + imag * imag) / (dataSize / 2);
+    }
 }
 
 int main() {
