@@ -70,7 +70,41 @@ DDATA ddata = {
 // Estimate frequency and theta
 //
 void estimateFrequencyAndTheta(DDATA *ddata, int dataSize) {
-...
+    float w0 = 0.0f, w1 = 0.0f, out_PLL = 0.0f, uVQ = 0.0f, temp_error = 0.0f;
+    
+    for (int n = 0; n < dataSize; n++) {
+
+        // Per-unit normalization of the voltage inputs
+        float a = ddata->in_a[n] / NOM_PEAK_VOLT;
+        float b = ddata->in_b[n] / NOM_PEAK_VOLT;
+        float c = ddata->in_c[n] / NOM_PEAK_VOLT;
+
+        // SRF-PLL (Synchronous Reference Frame Phase-Locked Loop)
+        // Using the rotating frame to find the Q component
+        uVQ = (-2.0f / 3.0f) * (sinf(ddata->Theta_est) * a + 
+               sinf(ddata->Theta_est - 2.0f * PI / 3.0f) * b +
+               sinf(ddata->Theta_est + 2.0f * PI / 3.0f) * c);
+
+        // Update PLL output
+        out_PLL += ddata->Kc1 * (uVQ - temp_error) + 
+                    ddata->Kc2 * ddata->Ts * (uVQ + temp_error) * 0.5f;
+        temp_error = uVQ;
+
+        // Update the angular frequency (omega)
+        w1 = w0;
+        w0 = out_PLL + 2.0f * PI * NOM_FREQ_GRID;
+
+        // Estimate theta from the omega
+        ddata->Theta_est += ((w0 + w1) * ddata->Ts / 2.0f);
+        
+        // Ensure theta stays within the range [0, 2π]
+        if (ddata->Theta_est >= 2.0f * PI) {
+            ddata->Theta_est -= 2.0f * PI;
+        }
+
+        // Calculate the Frequency from the omega
+        ddata->F_est = w0 / (2.0f * PI);  
+    }
 }
 
 //
